@@ -16,7 +16,6 @@ class MastawekiaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Initialize client and data source instances
     final apiClient = ApiClient();
     final authRemoteDataSource = AuthRemoteDataSourceImpl(client: apiClient);
 
