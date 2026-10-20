@@ -1,9 +1,12 @@
 // lib/features/auth/presentation/screens/register_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mastawekia_app/core/constants/app_colors.dart';
 import 'package:mastawekia_app/core/widgets/atmospheric_background.dart';
 import 'package:mastawekia_app/core/widgets/custom_text_field.dart';
 import 'package:mastawekia_app/core/widgets/primary_button.dart';
+import 'package:mastawekia_app/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:mastawekia_app/features/auth/presentation/cubit/auth_state.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,7 +22,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
 
   String _selectedRole = 'seeker';
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -31,13 +33,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _handleRegister() {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registering as ${_selectedRole.toUpperCase()}...')),
-      );
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) setState(() => _isLoading = false);
-      });
+      context.read<AuthCubit>().register(
+            fullName: _nameController.text.trim(),
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            role: _selectedRole,
+          );
     }
   }
 
@@ -54,95 +55,122 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Create Account',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.foreground,
+            child: BlocConsumer<AuthCubit, AuthState>(
+              listener: (context, state) {
+                if (state is AuthFailure) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: AppColors.error,
+                      content: Text(state.message),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Join Mastawekia to post or find opportunities.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'I am joining as a:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.foreground,
+                  );
+                } else if (state is Authenticated) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: AppColors.accent,
+                      content: Text(
+                        'Account created! Logged in as ${state.user.fullName}',
+                        style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
+                  );
+                  Navigator.pop(context); // Go back or route to home
+                }
+              },
+              builder: (context, state) {
+                final isLoading = state is AuthLoading;
+
+                return Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: _buildRoleCard(
-                          title: 'Job Seeker',
-                          role: 'seeker',
-                          icon: Icons.person_search_outlined,
+                      const Text(
+                        'Create Account',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.foreground,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildRoleCard(
-                          title: 'Employer / Client',
-                          role: 'client',
-                          icon: Icons.business_outlined,
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Join Mastawekia to post or find opportunities.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'I am joining as a:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.foreground,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildRoleCard(
+                              title: 'Job Seeker',
+                              role: 'seeker',
+                              icon: Icons.person_search_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildRoleCard(
+                              title: 'Employer / Client',
+                              role: 'client',
+                              icon: Icons.business_outlined,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      CustomTextField(
+                        label: 'Full Name / Company Name',
+                        hint: 'e.g. Abebe Kebede',
+                        controller: _nameController,
+                        prefixIcon: const Icon(Icons.person_outline, color: AppColors.textSecondary),
+                        validator: (val) => val == null || val.trim().isEmpty ? 'Name is required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      CustomTextField(
+                        label: 'Email Address',
+                        hint: 'name@example.com',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) return 'Email is required';
+                          if (!val.contains('@')) return 'Enter a valid email';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      CustomTextField(
+                        label: 'Password',
+                        hint: 'Minimum 6 characters',
+                        controller: _passwordController,
+                        isPassword: true,
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
+                        validator: (val) {
+                          if (val == null || val.length < 6) return 'Password must be at least 6 characters';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 28),
+                      PrimaryButton(
+                        text: 'Create Account',
+                        isLoading: isLoading,
+                        onPressed: _handleRegister,
+                      ),
+                      const SizedBox(height: 24),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  CustomTextField(
-                    label: 'Full Name / Company Name',
-                    hint: 'e.g. Abebe Kebede',
-                    controller: _nameController,
-                    prefixIcon: const Icon(Icons.person_outline, color: AppColors.textSecondary),
-                    validator: (val) => val == null || val.trim().isEmpty ? 'Name is required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  CustomTextField(
-                    label: 'Email Address',
-                    hint: 'name@example.com',
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textSecondary),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Email is required';
-                      if (!val.contains('@')) return 'Enter a valid email';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  CustomTextField(
-                    label: 'Password',
-                    hint: 'Minimum 6 characters',
-                    controller: _passwordController,
-                    isPassword: true,
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
-                    validator: (val) {
-                      if (val == null || val.length < 6) return 'Password must be at least 6 characters';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 28),
-                  PrimaryButton(
-                    text: 'Create Account',
-                    isLoading: _isLoading,
-                    onPressed: _handleRegister,
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),
