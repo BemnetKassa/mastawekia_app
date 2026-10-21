@@ -1,9 +1,8 @@
 // lib/features/auth/data/datasources/auth_remote_datasource.dart
-
 import 'package:dio/dio.dart';
-import '../../../../core/constants/api_endpoints.dart';
-import '../../../../core/network/api_client.dart';
-import '../models/auth_response_model.dart';
+import 'package:mastawekia_app/core/constants/api_endpoints.dart';
+import 'package:mastawekia_app/core/network/api_client.dart';
+import 'package:mastawekia_app/features/auth/data/models/auth_response_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<AuthResponseModel> login({
@@ -12,7 +11,6 @@ abstract class AuthRemoteDataSource {
   });
 
   Future<AuthResponseModel> register({
-    required String fullName,
     required String email,
     required String password,
     required String role,
@@ -40,7 +38,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       final authResponse = AuthResponseModel.fromJson(response.data);
 
-      // Save the token securely to device Keystore
       await _client.storage.write(
         key: 'access_token',
         value: authResponse.accessToken,
@@ -55,7 +52,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<AuthResponseModel> register({
-    required String fullName,
     required String email,
     required String password,
     required String role,
@@ -64,10 +60,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final response = await _client.dio.post(
         ApiEndpoints.register,
         data: {
-          'fullName': fullName,
           'email': email,
           'password': password,
-          'role': role,
+          'role': role.toUpperCase(), // Strictly 'USER' or 'CLIENT'
         },
       );
 
