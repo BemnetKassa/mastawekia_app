@@ -1,40 +1,56 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mastawekia_app/app/routes.dart';
 import 'package:mastawekia_app/core/network/api_client.dart';
 import 'package:mastawekia_app/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:mastawekia_app/features/auth/presentation/cubit/auth_cubit.dart';
-import 'package:mastawekia_app/features/auth/presentation/screens/login_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MastawekiaApp());
 }
 
-class MastawekiaApp extends StatelessWidget {
+class MastawekiaApp extends StatefulWidget {
   const MastawekiaApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final apiClient = ApiClient();
-    final authRemoteDataSource = AuthRemoteDataSourceImpl(client: apiClient);
+  State<MastawekiaApp> createState() => _MastawekiaAppState();
+}
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthCubit>(
-          create: (context) => AuthCubit(
-            remoteDataSource: authRemoteDataSource,
-          )..checkAuthStatus(),
-        ),
-      ],
-      child: MaterialApp(
+class _MastawekiaAppState extends State<MastawekiaApp> {
+  late final ApiClient _apiClient;
+  late final AuthRemoteDataSource _authRemoteDataSource;
+  late final AuthCubit _authCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _apiClient = ApiClient();
+    _authRemoteDataSource = AuthRemoteDataSourceImpl(client: _apiClient);
+    _authCubit = AuthCubit(remoteDataSource: _authRemoteDataSource)..checkAuthStatus();
+  }
+
+  @override
+  void dispose() {
+    _authCubit.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final router = AppRoutes.createRouter(_authCubit);
+
+    return BlocProvider<AuthCubit>.value(
+      value: _authCubit,
+      child: MaterialApp.router(
         title: 'Mastawekia',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           fontFamily: 'Roboto',
           useMaterial3: true,
         ),
-        home: const LoginScreen(),
+        routerConfig: router,
       ),
     );
   }

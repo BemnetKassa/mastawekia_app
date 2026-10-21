@@ -5,7 +5,7 @@ class ApiEndpoints {
   // Can be configured at build/run time via --dart-define=API_BASE_URL=http://<host>:<port>
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'http://localhost:3000',
   );
 
   // Auth endpoints

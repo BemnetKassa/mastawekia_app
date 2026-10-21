@@ -8,7 +8,8 @@ import 'package:mastawekia_app/core/widgets/primary_button.dart';
 import 'package:mastawekia_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:mastawekia_app/features/auth/presentation/cubit/auth_state.dart';
 import 'package:mastawekia_app/features/auth/presentation/screens/register_screen.dart';
-
+import 'package:go_router/go_router.dart';
+import 'package:mastawekia_app/app/routes.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -137,13 +138,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             "Don't have an account? ",
                             style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                           ),
+                          // Replace Navigator.push with context.push
                           GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                              );
-                            },
+                            onTap: () => context.push(AppRoutes.register),
                             child: const Text(
                               'Register',
                               style: TextStyle(

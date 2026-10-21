@@ -1,6 +1,6 @@
 // lib/features/auth/data/models/user_model.dart
 
-enum UserRole { client, seeker }
+enum UserRole { client, seeker, admin }
 
 class UserModel {
   final String id;
@@ -20,13 +20,19 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final roleStr = (json['role'] as String? ?? 'USER').toUpperCase();
+    UserRole parsedRole = UserRole.seeker;
+    if (roleStr == 'CLIENT' || roleStr == 'EMPLOYER') {
+      parsedRole = UserRole.client;
+    } else if (roleStr == 'ADMIN') {
+      parsedRole = UserRole.admin;
+    }
+
     return UserModel(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      fullName: json['fullName'] ?? json['name'] ?? '',
-      role: (json['role'] as String).toLowerCase() == 'client'
-          ? UserRole.client
-          : UserRole.seeker,
+      id: (json['id'] ?? json['userId'] ?? '') as String,
+      email: (json['email'] ?? '') as String,
+      fullName: (json['fullName'] ?? json['name'] ?? json['email'] ?? '') as String,
+      role: parsedRole,
       phoneNumber: json['phoneNumber'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
     );
