@@ -24,18 +24,15 @@ class AppRoutes {
         final isLoggingIn = state.matchedLocation == login;
         final isRegistering = state.matchedLocation == register;
 
-        // If unauthenticated and not on auth pages, redirect to login
         if (authState is Unauthenticated || authState is AuthInitial || authState is AuthFailure) {
           return (isLoggingIn || isRegistering) ? null : login;
         }
 
-        // If authenticated, route based on role
         if (authState is Authenticated) {
           final targetHome = authState.user.role == UserRole.client
               ? clientHome
               : seekerHome;
 
-          // If user is sitting on auth pages while authenticated, push to dashboard
           if (isLoggingIn || isRegistering) {
             return targetHome;
           }
@@ -65,7 +62,6 @@ class AppRoutes {
   }
 }
 
-// Listenable wrapper so GoRouter responds to Cubit stream emissions
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     stream.listen((_) => notifyListeners());
